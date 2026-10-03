@@ -1,159 +1,446 @@
-# AI Presentation Generator — Rich Visual Edition
+# AI Presentation Generator
 
-A local Java/Spring Boot presentation generator that turns a text-based PDF/DOCX/TXT into a PowerPoint using Ollama. The richer edition adds best-effort related-image retrieval from Wikimedia Commons, native PowerPoint diagrams, audience interaction panels, speaker notes, and selectable presentation styles.
+An AI-powered presentation generation application that automatically creates structured PowerPoint presentations from a user-provided topic.
 
-## Pipeline
+The application uses **Java, Spring Boot, AI/LLM APIs, and PowerPoint generation** to transform a simple topic into a complete presentation containing slides, text, images, diagrams, and structured content.
+
+## 🚀 Features
+
+* Generate presentations from a simple topic or prompt
+* AI-generated slide titles and content
+* Automatic slide structure and organization
+* Generate relevant images for presentation slides
+* Create diagrams to visually explain concepts
+* Generate PowerPoint (`.pptx`) files automatically
+* Customizable presentation options
+* Structured AI responses for reliable slide generation
+* REST API-based backend
+* Separation of AI processing, presentation generation, and file handling
+
+## 🛠️ Technologies Used
+
+* **Java**
+* **Spring Boot**
+* **Spring Web**
+* **AI / LLM API**
+* **Apache POI / PowerPoint libraries**
+* **REST APIs**
+* **Maven**
+* **JSON**
+* **Git / GitHub**
+
+## 🏗️ Project Architecture
 
 ```text
-Document upload
-    |
-    v
-Apache Tika text extraction
-    |
-    v
-Chunking
-    |
-    v
-Ollama / llama3:latest
-    |
-    +----> slide content
-    +----> visual type + image query
-    +----> diagram hints
-    +----> audience interaction prompts
-    |
-    +--> Wikimedia Commons image retrieval (best-effort, no API key)
-    |
-    v
-Apache POI PowerPoint generation
-    |
-    v
-.pptx download
+User
+  │
+  ▼
+REST API
+  │
+  ▼
+Presentation Controller
+  │
+  ▼
+Presentation Service
+  │
+  ├──────────────► AI Service
+  │                    │
+  │                    ▼
+  │              LLM / AI API
+  │                    │
+  │                    ▼
+  │              Slide Content
+  │
+  ├──────────────► Image Service
+  │                    │
+  │                    ▼
+  │              Relevant Images
+  │
+  ├──────────────► Diagram Service
+  │                    │
+  │                    ▼
+  │              Generated Diagrams
+  │
+  ▼
+PowerPoint Generator
+  │
+  ▼
+.pptx File
 ```
 
-## Important
+## 🔄 Application Flow
 
-Use **text-based PDFs** for this version. Scanned/image-only PDFs require OCR, which is intentionally not part of this edition.
+### 1. User provides a topic
 
-## Requirements
+The user sends a request such as:
 
-- Windows 10/11
-- Java 21+ (your Java 25 is fine)
-- Maven (the setup script can install a project-local copy)
-- Ollama running locally
-- `llama3:latest` downloaded
-- Internet access if you want Wikimedia Commons images
+```text
+Create a presentation about Apache Kafka
+```
 
-## Ollama
+### 2. Request reaches the REST Controller
 
-Check:
+The Spring Boot controller receives the request and passes it to the presentation service.
+
+```text
+POST /presentation/generate
+```
+
+### 3. Presentation Service processes the request
+
+The service coordinates the different components required to build the presentation.
+
+It determines:
+
+* Number of slides
+* Slide topics
+* Slide structure
+* Content requirements
+* Images
+* Diagrams
+
+### 4. AI generates the presentation content
+
+The application sends a structured prompt to the LLM.
+
+The model generates information such as:
+
+```text
+Slide 1 → Introduction
+Slide 2 → What is Kafka?
+Slide 3 → Kafka Architecture
+Slide 4 → Producers and Consumers
+Slide 5 → Kafka Topics and Partitions
+Slide 6 → Real-world Use Cases
+Slide 7 → Conclusion
+```
+
+### 5. Images are generated or retrieved
+
+Relevant images can be associated with appropriate slides to make the presentation more visually engaging.
+
+### 6. Diagrams are created
+
+For technical topics, the application can generate diagrams such as:
+
+```text
+Producer
+    │
+    ▼
+ Kafka Topic
+    │
+ ┌──┴──┐
+ ▼     ▼
+Consumer  Consumer
+```
+
+This helps explain technical concepts visually instead of relying only on text.
+
+### 7. PowerPoint file is generated
+
+The generated content, images, and diagrams are assembled into PowerPoint slides.
+
+The final result is a:
+
+```text
+presentation.pptx
+```
+
+file that can be opened in Microsoft PowerPoint or compatible presentation software.
+
+## 📂 Project Structure
+
+A typical project structure looks like:
+
+```text
+Presentation_Generator/
+│
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com.example.presentation/
+│   │   │       │
+│   │   │       ├── controller/
+│   │   │       │   └── PresentationController.java
+│   │   │       │
+│   │   │       ├── service/
+│   │   │       │   ├── PresentationService.java
+│   │   │       │   ├── AIService.java
+│   │   │       │   ├── ImageService.java
+│   │   │       │   └── DiagramService.java
+│   │   │       │
+│   │   │       ├── generator/
+│   │   │       │   └── PowerPointGenerator.java
+│   │   │       │
+│   │   │       ├── model/
+│   │   │       │   ├── Presentation.java
+│   │   │       │   ├── Slide.java
+│   │   │       │   └── Chunk.java
+│   │   │       │
+│   │   │       └── PresentationGeneratorApplication.java
+│   │   │
+│   │   └── resources/
+│   │       └── application.properties
+│   │
+│   └── test/
+│
+├── pom.xml
+├── README.md
+└── .gitignore
+```
+
+> The exact package and class names may differ depending on the current implementation.
+
+## 🧩 Important Components
+
+### PresentationController
+
+Responsible for exposing REST endpoints and accepting presentation-generation requests.
+
+Example:
+
+```text
+POST /presentation/generate
+```
+
+### PresentationService
+
+Acts as the main coordinator.
+
+It connects the AI, image, diagram, and PowerPoint generation components.
+
+### AIService
+
+Responsible for communicating with the LLM API and generating structured presentation content.
+
+The AI configuration can include parameters such as:
+
+```java
+options.put("temperature", 0.2);
+```
+
+A lower temperature helps produce more consistent and predictable presentation content.
+
+### ImageService
+
+Responsible for obtaining or generating images that are relevant to individual slides.
+
+### DiagramService
+
+Creates visual diagrams for concepts that are better explained graphically.
+
+### PowerPointGenerator
+
+Converts the structured presentation data into an actual `.pptx` file.
+
+## 📦 Data Model
+
+The application uses objects to represent presentation information.
+
+For example:
+
+```java
+public record Chunk(int index, String text) {
+}
+```
+
+A Java `record` is useful when an object primarily represents data and does not require extensive custom behavior.
+
+A presentation can conceptually be represented as:
+
+```text
+Presentation
+    │
+    ├── Slide 1
+    │     ├── Title
+    │     ├── Content
+    │     ├── Image
+    │     └── Diagram
+    │
+    ├── Slide 2
+    │     ├── Title
+    │     └── Content
+    │
+    └── Slide N
+```
+
+## ⚙️ Configuration
+
+Create the required configuration values in:
+
+```text
+src/main/resources/application.properties
+```
+
+Example:
+
+```properties
+server.port=8080
+
+# AI API configuration
+ai.api.key=${AI_API_KEY}
+```
+
+Sensitive API keys should **never be committed to GitHub**.
+
+Instead, configure them as environment variables.
+
+Example:
+
+### Windows
 
 ```cmd
-ollama list
+set AI_API_KEY=your_api_key
 ```
 
-You should see:
+### macOS/Linux
 
-```text
-llama3:latest
+```bash
+export AI_API_KEY=your_api_key
 ```
 
-If Ollama is already running, do not run `ollama serve` again.
+## ▶️ Running the Application
 
-## Windows setup
+### 1. Clone the repository
 
-From the project root:
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-Unblock-File .\scripts\setup-windows.ps1
-.\scripts\setup-windows.ps1
+```bash
+git clone <your-repository-url>
 ```
 
-## Run
+### 2. Navigate to the project
 
-```powershell
-.\scripts\run-windows.ps1
+```bash
+cd Presentation_Generator
 ```
 
-Open:
+### 3. Configure the API key
+
+Set the required environment variables.
+
+### 4. Build the project
+
+```bash
+mvn clean install
+```
+
+### 5. Start the application
+
+```bash
+mvn spring-boot:run
+```
+
+The application will start on:
 
 ```text
 http://localhost:8080
 ```
 
-## What is new
+## 🔌 Example API Request
 
-### Related images
+Example request:
 
-The LLM creates an image search query for appropriate slides. The app calls the Wikimedia Commons API and downloads a thumbnail when a suitable result is available. If the image lookup fails, the presentation still completes with a visual fallback.
+```http
+POST /presentation/generate
+Content-Type: application/json
+```
 
-Wikimedia Commons' MediaWiki API supports image metadata and thumbnail URLs through `prop=imageinfo` and `iiurlwidth`. Source attribution is added in a small footer on image slides.
+Request body:
 
-### Diagrams
+```json
+{
+  "topic": "Apache Kafka",
+  "slides": 7
+}
+```
 
-The LLM can request simple native PowerPoint diagrams. The current renderer supports flow/process-style diagrams with 2–6 labeled boxes and arrows. Because these are PowerPoint shapes rather than screenshots, users can edit them after generation.
+The application processes the request and generates the presentation.
 
-### Audience interaction
+## 📤 Output
 
-Slides can include:
+The generated presentation contains:
 
-- Quick polls
-- Show-of-hands prompts
-- Discussion prompts
-- Scenarios
-- Audience questions
-
-The renderer displays these as editable cards on the slide. For 6+ slide decks, the pipeline ensures at least two interaction moments when interaction mode is enabled.
-
-### Styles
-
-The browser UI lets you choose:
-
-- Professional
-- Technical / Architecture
-- Storytelling
-- Executive Summary
-- Teaching / Classroom
-
-## API
-
-`POST /api/presentations/generate`
-
-Multipart field:
-
-- `file` — PDF/DOCX/TXT/PPTX/etc.
-
-Query parameters:
-
-- `slides` — desired content-slide count, 3–15
-- `visuals` — `true`/`false`
-- `interactions` — `true`/`false`
-- `style` — `professional`, `technical`, `storytelling`, `executive`, or `teaching`
+* Slide titles
+* AI-generated content
+* Relevant visual content
+* Technical diagrams
+* Structured layouts
+* PowerPoint formatting
 
 Example:
 
-```powershell
-curl.exe -X POST "http://localhost:8080/api/presentations/generate?slides=8&visuals=true&interactions=true&style=technical" -F "file=@sample/sample_document.txt" -o generated.pptx
+```text
+output/
+└── Apache_Kafka_Presentation.pptx
 ```
 
-## Free local AI
+## 🎯 Example Use Cases
 
-This project uses Ollama locally. There is no OpenAI API key and no OpenAI billing requirement.
+The application can be used to generate presentations for:
 
-## Image-source note
+* Technical topics
+* Software architecture
+* College presentations
+* Project demonstrations
+* Business presentations
+* Educational content
+* Product explanations
+* Technical interviews
 
-Images are retrieved from Wikimedia Commons on a best-effort basis. Commons content can have different licenses; the generated deck includes a source footer, but for published/commercial decks you should review the individual file's license and attribution requirements.
+Example topics:
 
-## Troubleshooting
+```text
+Java Spring Boot
+Apache Kafka
+Microservices
+Cloud Computing
+Artificial Intelligence
+Machine Learning
+Cybersecurity
+Database Systems
+```
 
-### `No readable text was extracted`
-The uploaded PDF is likely scanned/image-only. Use a text-based PDF for this version.
+## 🔮 Future Enhancements
 
-### `Generation failed: No Archiver found for the stream signature`
-Make sure you are using the project version with Apache Tika 3.2.3 or newer.
+Possible improvements include:
 
-### Port 8080 is busy
-Stop the process using port 8080 or change `server.port` in `application.properties`.
+* User-selectable presentation themes
+* Multiple PowerPoint templates
+* Automatic speaker notes
+* Voice-over generation
+* Automatic slide animations
+* Interactive charts
+* More advanced diagrams
+* Web-based presentation editor
+* Presentation preview before download
+* User authentication
+* Presentation history
+* Cloud storage integration
+* Support for multiple AI providers
 
-### Images are not appearing
-The presentation still works without images. Check internet connectivity and make sure Wikimedia Commons is reachable from the machine.
+## 📚 Learning Outcomes
+
+This project demonstrates practical experience with:
+
+* Java application development
+* Spring Boot REST APIs
+* AI/LLM integration
+* Prompt engineering
+* JSON processing
+* Object-oriented design
+* File generation
+* PowerPoint automation
+* API integration
+* Service-layer architecture
+* Exception handling
+* Environment-based configuration
+
+## 👨‍💻 Author
+
+**Badrinath Nooka**
+
+Computer Science Graduate Student
+Java | Spring Boot | AI/LLM | Full Stack Development
+
+---
+
+⭐ If you find this project useful, consider giving the repository a star.
