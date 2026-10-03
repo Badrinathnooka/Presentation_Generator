@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Presentation Generator</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; background:#f6f8fb; color:#17202a; }
+    .card { background:white; border: 1px solid #dbe1e8; border-radius: 16px; padding: 28px; box-shadow: 0 8px 30px rgba(0,0,0,.06); }
+    h1 { margin-top: 0; }
+    .muted { color:#607080; }
+    label { display:block; font-weight:600; margin:16px 0 8px; }
+    input, select, button { font-size:16px; }
+    input[type=file], input[type=number], select { width:100%; box-sizing:border-box; padding:10px; border:1px solid #ccd5df; border-radius:8px; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .checks { display:flex; gap:20px; flex-wrap:wrap; margin-top:14px; }
+    .checks label { display:flex; gap:8px; align-items:center; margin:0; font-weight:500; }
+    button { margin-top:20px; padding:13px 20px; border:0; border-radius:9px; cursor:pointer; background:#2d5c87; color:white; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    #status { margin-top:18px; white-space:pre-wrap; }
+    @media (max-width: 700px) { .row { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>AI Presentation Generator</h1>
+    <p class="muted">Upload a text-based PDF, Word document, or text file. The generator can add related images, native diagrams, speaker notes, and audience interaction moments.</p>
+
+    <label for="file">Document</label>
+    <input id="file" type="file" accept=".pdf,.docx,.doc,.txt,.md,.rtf,.pptx,.ppt">
+
+    <div class="row">
+      <div>
+        <label for="slides">Approximate content slides</label>
+        <input id="slides" type="number" min="3" max="15" value="8">
+      </div>
+      <div>
+        <label for="style">Presentation style</label>
+        <select id="style">
+          <option value="professional">Professional</option>
+          <option value="technical">Technical / Architecture</option>
+          <option value="storytelling">Storytelling</option>
+          <option value="executive">Executive Summary</option>
+          <option value="teaching">Teaching / Classroom</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="checks">
+      <label><input id="visuals" type="checkbox" checked> Add related images and diagrams</label>
+      <label><input id="interactions" type="checkbox" checked> Add audience interaction moments</label>
+    </div>
+
+    <button id="generate">Generate Rich Presentation</button>
+    <div id="status"></div>
+  </div>
+
+<script>
+const fileInput = document.getElementById('file');
+const slidesInput = document.getElementById('slides');
+const styleInput = document.getElementById('style');
+const visualsInput = document.getElementById('visuals');
+const interactionsInput = document.getElementById('interactions');
+const button = document.getElementById('generate');
+const status = document.getElementById('status');
+
+button.addEventListener('click', async () => {
+  const file = fileInput.files[0];
+  if (!file) { status.textContent = 'Choose a document first.'; return; }
+
+  button.disabled = true;
+  status.textContent = 'Generating... Ollama may take a little while, and image retrieval can add time.';
+
+  const params = new URLSearchParams({
+    slides: slidesInput.value,
+    visuals: String(visualsInput.checked),
+    interactions: String(interactionsInput.checked),
+    style: styleInput.value
+  });
+  const form = new FormData();
+  form.append('file', file);
+
+  try {
+    const response = await fetch('/api/presentations/generate?' + params.toString(), { method:'POST', body:form });
+    if (!response.ok) {
+      let message = await response.text();
+      try { message = JSON.parse(message).message || message; } catch (_) {}
+      throw new Error(message);
+    }
+    const blob = await response.blob();
+    const disposition = response.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+    const name = match ? match[1] : 'generated-presentation.pptx';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    status.textContent = 'Done. Your rich presentation download should have started.';
+  } catch (err) {
+    status.textContent = 'Generation failed:\n' + err.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
